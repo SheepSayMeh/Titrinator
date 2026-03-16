@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titrinator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/Titrinator/assets/index-ZewcXshg.js"></script>
+  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-Ct77qb4L.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Titrinator</h1>
+        <div class="subtitle">Automatic Titration System</div>
+    </div>
+
+    <div class="card">
+        <!-- No BLE support warning -->
+        <div id="no-ble">
+            <div class="warn-icon">⚠️</div>
+            <div class="warn-text">
+                Web Bluetooth is not supported in this browser.<br><br>
+                Please use <strong>Chrome</strong> on Android or desktop.<br>
+                On iOS, use <a href="https://apps.apple.com/app/bluefy/id1492814321" target="_blank">Bluefy</a>.
+            </div>
+        </div>
+
+        <!-- Scan screen -->
+        <div id="scan-screen">
+            <div class="scan-header">
+                <div class="scan-dot idle" id="scan-dot"></div>
+                <div class="scan-label" id="scan-label">Press scan to find devices</div>
+            </div>
+            <div id="device-list">
+                <div class="empty-hint" id="empty-hint">No devices found yet</div>
+            </div>
+            <button class="scan-btn" id="scan-btn">SCAN FOR DEVICES</button>
+        </div>
+
+        <!-- Control screen -->
+        <div id="control-screen">
+            <div class="control-header">
+                <div id="connected-name">—</div>
+                <div class="conn-indicator">
+                    <div class="conn-dot"></div>
+                    <span>connected</span>
+                </div>
+            </div>
+            <div class="step-group">
+                <div class="step-label">Steps</div>
+                <div class="step-row">
+                    <input type="number" id="steps" value="200" min="1" />
+                    <button class="step-btn" id="step-btn">STEP</button>
+                </div>
+                <div class="dir-row">
+                    <button class="dir-btn active" id="dir-fwd">▶ Forward</button>
+                    <button class="dir-btn" id="dir-rev">◀ Reverse</button>
+                </div>
+            </div>
+            <div id="log"></div>
+            <button class="disconnect-btn" id="disconnect-btn">disconnect</button>
+        </div>
+    </div>
+
+</body>
+</html>
