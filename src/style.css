@@ -1,0 +1,257 @@
+:root {
+    --bg:        #0a0a0a;
+    --surface:   #141414;
+    --border:    #222;
+    --accent:    #00e5ff;
+    --accent-dim:#00e5ff22;
+    --text:      #d0d0d0;
+    --muted:     #444;
+    --warn:      #ff9800;
+    --danger:    #ff4444;
+    --success:   #00e5ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-shadow: 0 0 30px #00e5ff55;
+    line-height: 1;
+}
+
+.subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 6px;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ── No BLE ── */
+#no-ble {
+    display: none;
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+    gap: 12px;
+}
+.warn-icon { font-size: 2rem; }
+.warn-text { font-size: 0.8rem; color: var(--muted); line-height: 1.7; }
+.warn-text a { color: var(--accent); }
+
+/* ── Scan screen ── */
+#scan-screen { display: flex; flex-direction: column; gap: 20px; }
+
+.scan-header { display: flex; align-items: center; gap: 10px; }
+
+.scan-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+.scan-dot.idle { animation: none; background: var(--muted); box-shadow: none; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+.scan-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+#device-list { display: flex; flex-direction: column; gap: 8px; min-height: 48px; }
+
+.empty-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-align: center;
+    padding: 16px 0;
+}
+
+.scan-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    padding: 12px;
+    width: 100%;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.scan-btn:hover {
+    background: var(--accent-dim);
+    box-shadow: 0 0 16px #00e5ff33;
+}
+
+/* ── Control screen ── */
+#control-screen { display: none; flex-direction: column; gap: 24px; }
+
+.control-header { display: flex; justify-content: space-between; align-items: center; }
+
+#connected-name {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.conn-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+.conn-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+}
+
+.step-group { display: flex; flex-direction: column; gap: 10px; }
+
+.step-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+.step-row { display: flex; gap: 10px; }
+
+input[type=number] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem;
+    padding: 12px 16px;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type=number]:focus { border-color: var(--accent); }
+
+.step-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+    padding: 12px 24px;
+    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+    white-space: nowrap;
+}
+.step-btn:hover:not(:disabled) {
+    background: var(--accent-dim);
+    box-shadow: 0 0 16px #00e5ff33;
+}
+.step-btn:active:not(:disabled) { transform: scale(0.97); }
+.step-btn:disabled { border-color: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.dir-row { display: flex; gap: 8px; }
+
+.dir-btn {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    padding: 8px;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.dir-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
+#log {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    min-height: 1.2em;
+    text-align: center;
+    transition: color 0.2s;
+}
+#log.ok  { color: var(--success); }
+#log.err { color: var(--danger); }
+
+.disconnect-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 4px;
+    width: 100%;
+    transition: color 0.15s;
+}
+.disconnect-btn:hover { color: var(--danger); }
+
+@media (max-width: 420px) {
+    .card { padding: 20px; }
+    h1 { font-size: 2.8rem; }
+}
