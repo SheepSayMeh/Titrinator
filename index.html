@@ -6,8 +6,8 @@
     <title>Titrinator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Titrinator/assets/index-ZewcXshg.js"></script>
-  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-Ct77qb4L.css">
+  <script type="module" crossorigin src="/Titrinator/assets/index-DssFS7_e.js"></script>
+  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-OrPkTXyO.css">
 </head>
 <body>
     <div class="header">
@@ -47,6 +47,10 @@
                     <span>connected</span>
                 </div>
             </div>
+            <div class="cal-status-row">
+                <span class="cal-status-label">Calibration</span>
+                <span id="cal-status" class="cal-status warn">not calibrated</span>
+            </div>
             <div class="step-group">
                 <div class="step-label">Steps</div>
                 <div class="step-row">
@@ -59,7 +63,46 @@
                 </div>
             </div>
             <div id="log"></div>
-            <button class="disconnect-btn" id="disconnect-btn">disconnect</button>
+            <div class="bottom-row">
+                <button class="secondary-btn" id="cal-btn">CALIBRATE</button>
+                <button class="disconnect-btn" id="disconnect-btn">disconnect</button>
+            </div>
+        </div>
+
+        <!-- Calibration screen -->
+        <div id="calibration-screen">
+            <div class="control-header">
+                <div class="screen-title">Calibration</div>
+                <button class="back-btn" id="cal-back-btn">← Back</button>
+            </div>
+            <div class="cal-section">
+                <div class="step-label">Flush pump</div>
+                <p class="cal-hint">Run the pump to prime the tubing before calibrating.</p>
+                <button class="flush-btn" id="flush-btn">FLUSH</button>
+            </div>
+            <div class="cal-divider"></div>
+            <div class="cal-section">
+                <div class="step-label">Run calibration</div>
+                <p class="cal-hint">Place a weighed vessel under the outlet, then press Calibrate. The pump will run for 5000 steps. Weigh the collected water and enter the mass.</p>
+                <button class="cal-run-btn" id="cal-btn-run">CALIBRATE</button>
+            </div>
+            <div id="cal-log"></div>
+
+            <!-- Calibration modal -->
+            <div id="cal-modal">
+                <div class="modal-box">
+                    <div class="modal-title">Calibration</div>
+                    <div id="cal-modal-log" class="cal-modal-log"></div>
+                    <button class="step-btn" id="cal-start-btn">START PUMP</button>
+                    <div class="mass-group" id="mass-group">
+                        <div class="step-label">Collected mass (g)</div>
+                        <input type="number" id="cal-mass" min="0.1" step="0.1" placeholder="0.00" />
+                        <button class="step-btn" id="cal-submit-btn">SAVE CALIBRATION</button>
+                    </div>
+                    <div id="cal-result"></div>
+                    <button class="cancel-btn" id="cal-cancel-btn">cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 
