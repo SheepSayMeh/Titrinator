@@ -1,0 +1,10 @@
+CompileFlags:
+  Remove:
+    - -mlongcalls
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fno-jump-tables
+    - -Wno-frame-address
+    - -mtext-section-literals
+    - -fexceptions
+    - -fno-rtti

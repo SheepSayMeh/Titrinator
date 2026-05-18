@@ -1,47 +1,32 @@
-export const els = {
-    scanScreen:    document.getElementById('scan-screen'),
-    controlScreen: document.getElementById('control-screen'),
-    noBle:         document.getElementById('no-ble'),
-    scanBtn:       document.getElementById('scan-btn'),
-    scanDot:       document.getElementById('scan-dot'),
-    scanLabel:     document.getElementById('scan-label'),
-    connectedName: document.getElementById('connected-name'),
-    stepBtn:       document.getElementById('step-btn'),
-    stepsInput:    document.getElementById('steps'),
-    log:           document.getElementById('log'),
-    disconnectBtn: document.getElementById('disconnect-btn'),
-    dirFwd:        document.getElementById('dir-fwd'),
-    dirRev:        document.getElementById('dir-rev'),
-};
-
-export function showScanScreen(label = 'Press scan to find devices') {
-    els.scanScreen.style.display    = 'flex';
-    els.controlScreen.style.display = 'none';
-    els.noBle.style.display         = 'none';
-    els.scanDot.classList.add('idle');
-    els.scanLabel.textContent = label;
-    els.scanBtn.disabled = false;
+export function showOnly(id) {
+    const screens = [
+        'no-ble', 'scan-screen', 'landing-screen',
+        'manual-screen', 'calibrate-screen',
+        'pump-cal-screen', 'ph-cal-screen', 'titrate-screen', 'history-screen'
+    ];
+    screens.forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.style.display = s === id ? 'flex' : 'none';
+    });
 }
 
-export function showControlScreen(name) {
-    els.scanScreen.style.display    = 'none';
-    els.controlScreen.style.display = 'flex';
-    els.connectedName.textContent   = name;
-    els.stepBtn.disabled = false;
+export function setLog(id, msg, type = '') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'log ' + type;
 }
 
-export function showNoBle() {
-    els.scanScreen.style.display = 'none';
-    els.noBle.style.display      = 'flex';
-}
-
-export function setScanning(label) {
-    els.scanDot.classList.remove('idle');
-    els.scanLabel.textContent = label;
-    els.scanBtn.disabled = true;
-}
-
-export function setLog(msg, type = '') {
-    els.log.textContent = msg;
-    els.log.className = type;
+export function setScanning(scanning) {
+    const dot   = document.getElementById('scan-dot');
+    const label = document.getElementById('scan-label');
+    const btn   = document.getElementById('scan-btn');
+    if (scanning) {
+        dot.classList.remove('idle');
+        label.textContent = 'Waiting for selection...';
+        btn.disabled = true;
+    } else {
+        dot.classList.add('idle');
+        btn.disabled = false;
+    }
 }

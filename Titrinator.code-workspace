@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "Titrinator (Web)"
+    },
+    {
+      "path": "firmware",
+      "name": "Titrinator (Firmware)"
+    }
+  ],
+  "settings": {
+    "platformio-ide.disablePIOHomeStartup": true
+  }
+}

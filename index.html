@@ -14,7 +14,8 @@
     </div>
 
     <div class="card">
-        <!-- No BLE support warning -->
+
+        <!-- ── No BLE ── -->
         <div id="no-ble">
             <div class="warn-icon">⚠️</div>
             <div class="warn-text">
@@ -24,20 +25,17 @@
             </div>
         </div>
 
-        <!-- Scan screen -->
+        <!-- ── Scan screen ── -->
         <div id="scan-screen">
             <div class="scan-header">
                 <div class="scan-dot idle" id="scan-dot"></div>
                 <div class="scan-label" id="scan-label">Press scan to find devices</div>
             </div>
-            <div id="device-list">
-                <div class="empty-hint" id="empty-hint">No devices found yet</div>
-            </div>
             <button class="scan-btn" id="scan-btn">SCAN FOR DEVICES</button>
         </div>
 
-        <!-- Control screen -->
-        <div id="control-screen">
+        <!-- ── Landing screen ── -->
+        <div id="landing-screen">
             <div class="control-header">
                 <div id="connected-name">—</div>
                 <div class="conn-indicator">
@@ -45,20 +43,247 @@
                     <span>connected</span>
                 </div>
             </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">pH</span>
+                    <span class="status-value" id="ph-readout">—</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Temp</span>
+                    <span class="status-value muted" id="temp-readout">n/a</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Pump</span>
+                    <span class="status-value" id="pump-cal-status">—</span>
+                </div>
+            </div>
+            <div class="menu-btns">
+                <button class="menu-btn disabled" id="btn-titrate" disabled>
+                    <span class="menu-btn-title">TITRATE</span>
+                    <span class="menu-btn-sub" id="titrate-btn-sub">Disabled — calibrate pH &amp; pump first</span>
+                </button>
+                <button class="menu-btn" id="btn-manual">
+                    <span class="menu-btn-title">MANUAL CONTROL</span>
+                    <span class="menu-btn-sub">Step, volume, flush</span>
+                </button>
+                <button class="menu-btn" id="btn-calibrate">
+                    <span class="menu-btn-title">CALIBRATE</span>
+                    <span class="menu-btn-sub">Pump, pH, temperature</span>
+                </button>
+                <button class="menu-btn" id="btn-history">
+                    <span class="menu-btn-title">HISTORY</span>
+                    <span class="menu-btn-sub">Browse stored titrations</span>
+                </button>
+            </div>
+            <button class="disconnect-btn" id="disconnect-btn">disconnect</button>
+        </div>
+
+        <!-- ── Manual control screen ── -->
+        <div id="manual-screen">
+            <div class="screen-header">
+                <button class="back-btn" id="manual-back-btn">← Back</button>
+                <div class="screen-title">Manual Control</div>
+            </div>
             <div class="step-group">
-                <div class="step-label">Steps</div>
-                <div class="step-row">
-                    <input type="number" id="steps" value="200" min="1" />
-                    <button class="step-btn" id="step-btn">STEP</button>
+                <div class="input-row">
+                    <div class="input-col">
+                        <div class="step-label">Steps</div>
+                        <input type="number" id="steps-input" value="200" min="1" />
+                    </div>
+                    <div class="input-col">
+                        <div class="step-label">Volume (ml)</div>
+                        <input type="number" id="volume-input" min="0.01" step="0.01" placeholder="—" />
+                    </div>
                 </div>
                 <div class="dir-row">
                     <button class="dir-btn active" id="dir-fwd">▶ Forward</button>
                     <button class="dir-btn" id="dir-rev">◀ Reverse</button>
                 </div>
+                <div class="speed-row">
+                    <button class="speed-btn" id="speed-slow">SLOW</button>
+                    <button class="speed-btn active" id="speed-normal">NORMAL</button>
+                    <button class="speed-btn" id="speed-fast">FAST</button>
+                </div>
+                <button class="primary-btn" id="step-btn">STEP</button>
+                <button class="flush-btn" id="manual-flush-btn">FLUSH</button>
             </div>
-            <div id="log"></div>
-            <button class="disconnect-btn" id="disconnect-btn">disconnect</button>
+            <div id="manual-log" class="log"></div>
         </div>
+
+        <!-- ── Calibrate screen ── -->
+        <div id="calibrate-screen">
+            <div class="screen-header">
+                <button class="back-btn" id="cal-back-btn">← Back</button>
+                <div class="screen-title">Calibrate</div>
+            </div>
+            <div class="menu-btns">
+                <button class="menu-btn" id="btn-pump-cal">
+                    <span class="menu-btn-title">PUMP</span>
+                    <span class="menu-btn-sub" id="pump-cal-sub">Not calibrated</span>
+                </button>
+                <button class="menu-btn" id="btn-ph-cal">
+                    <span class="menu-btn-title">pH PROBE</span>
+                    <span class="menu-btn-sub" id="ph-cal-sub">Not calibrated</span>
+                </button>
+                <button class="menu-btn disabled" id="btn-temp-cal" disabled>
+                    <span class="menu-btn-title">TEMPERATURE</span>
+                    <span class="menu-btn-sub">Not implemented</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Pump calibration screen ── -->
+        <div id="pump-cal-screen">
+            <div class="screen-header">
+                <button class="back-btn" id="pump-cal-back-btn">← Back</button>
+                <div class="screen-title">Pump Calibration</div>
+            </div>
+            <div class="cal-section">
+                <div class="step-label">Flush pump</div>
+                <p class="cal-hint">Prime the tubing before calibrating.</p>
+                <button class="flush-btn" id="pump-flush-btn">FLUSH</button>
+            </div>
+            <div class="cal-divider"></div>
+            <div class="cal-section">
+                <div class="step-label">Run calibration</div>
+                <p class="cal-hint">Place a weighed vessel under the outlet, press Calibrate. The pump runs 50000 steps. Weigh the collected water and enter the mass.</p>
+                <button class="primary-btn" id="pump-cal-run-btn">CALIBRATE</button>
+            </div>
+            <div id="pump-cal-log" class="log"></div>
+
+            <!-- Pump cal modal -->
+            <div id="pump-cal-modal">
+                <div class="modal-box">
+                    <div class="modal-title">Pump Calibration</div>
+                    <div id="pump-modal-log" class="modal-log"></div>
+                    <button class="primary-btn" id="pump-cal-start-btn">START PUMP</button>
+                    <div class="mass-group" id="pump-mass-group">
+                        <div class="step-label">Collected mass (g)</div>
+                        <input type="number" id="pump-cal-mass" min="0.1" step="0.1" placeholder="0.00" />
+                        <button class="primary-btn" id="pump-cal-submit-btn">SAVE</button>
+                    </div>
+                    <div id="pump-cal-result" class="cal-result"></div>
+                    <button class="cancel-btn" id="pump-cal-cancel-btn">cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── pH calibration screen ── -->
+        <div id="ph-cal-screen">
+            <div class="screen-header">
+                <button class="back-btn" id="ph-cal-back-btn">← Back</button>
+                <div class="screen-title">pH Calibration</div>
+            </div>
+            <div class="cal-section">
+                <div class="step-label">Number of points</div>
+                <div class="dir-row">
+                    <button class="dir-btn active" id="ph-points-2">2 point</button>
+                    <button class="dir-btn" id="ph-points-3">3 point</button>
+                </div>
+            </div>
+            <div class="cal-divider"></div>
+            <!-- Live voltage readout -->
+            <div class="voltage-live-box">
+                <div class="step-label">Live reading</div>
+                <div class="voltage-live-row">
+                    <div id="voltage-live-readout" class="voltage-live-value">—</div>
+                    <div class="voltage-live-hint">Submerge probe and wait for value to stabilise</div>
+                </div>
+            </div>
+            <div class="ph-linearity-box">
+                <span class="step-label">Linearity deviation:</span>
+                <span id="ph-linearity-value">n/a</span>
+            </div>
+            <div class="cal-divider"></div>
+            <div id="ph-cal-points-container"></div>
+            <div class="cal-section">
+                <button class="primary-btn" id="ph-cal-fit-btn" disabled>SAVE CALIBRATION</button>
+            </div>
+            <div id="ph-cal-log" class="log"></div>
+        </div>
+
+        <!-- ── Titration screen ── -->
+        <div id="titrate-screen">
+            <!-- Setup (shown before start / after cancel) -->
+            <div id="titrate-setup" style="display:flex; flex-direction:column; gap:16px;">
+                <div class="screen-header">
+                    <button class="back-btn" id="titrate-back-btn">← Back</button>
+                    <div class="screen-title">Titration</div>
+                </div>
+                <div class="cal-section">
+                    <div class="step-label">Titration type</div>
+                    <div class="dir-row" id="titration-type-row"></div>
+                </div>
+                <div class="cal-section">
+                    <div class="step-label">Total volume (mL)</div>
+                    <input type="number" id="titrate-volume-input" min="0.1" step="0.1" value="10" />
+                </div>
+                <p class="cal-hint">Place probe and pump outlet in vessel, then press START.</p>
+            </div>
+
+            <!-- Live display (shown during / after titration) -->
+            <div id="titrate-display" style="display:none; flex-direction:column; gap:12px;">
+                <div class="titrate-readouts">
+                    <div class="titrate-readout">
+                        <span class="status-label">pH</span>
+                        <span class="status-value" id="titrate-ph">—</span>
+                    </div>
+                    <div class="titrate-readout">
+                        <span class="status-label">Volume</span>
+                        <span class="status-value" id="titrate-vol">0.000 mL</span>
+                    </div>
+                    </div>
+                <div id="titrate-chart-container"></div>
+                <table id="titrate-ep-table">
+                    <thead>
+                        <tr>
+                            <th>EP</th>
+                            <th>Volume (mL)</th>
+                            <th>pH</th>
+                        </tr>
+                    </thead>
+                    <tbody id="titrate-ep-tbody"></tbody>
+                </table>
+            </div>
+
+            <div class="titrate-controls">
+                <button class="primary-btn" id="titrate-action-btn">START</button>
+                <button class="flush-btn" id="titrate-cancel-btn" style="display:none;">CANCEL</button>
+                <button class="primary-btn" id="titrate-finish-btn" style="display:none;">FINISH</button>
+            </div>
+            <div id="titrate-log" class="log"></div>
+        </div>
+
+        <!-- ── History screen ── -->
+        <div id="history-screen">
+            <div class="screen-header">
+                <button class="back-btn" id="history-back-btn">← Back</button>
+                <div class="screen-title">History</div>
+            </div>
+            <!-- List view -->
+            <div id="history-list" class="menu-btns"></div>
+            <!-- Loading view (shown while fetching titration data) -->
+            <div id="history-loading" style="display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px 0;">
+                <div class="cal-hint" id="history-loading-text">Loading…</div>
+            </div>
+            <!-- Detail view (hidden until a titration is selected) -->
+            <div id="history-detail" style="display:none; flex-direction:column; gap:12px;">
+                <div id="history-detail-title" class="step-label" style="text-align:center;"></div>
+                <div id="history-chart-container"></div>
+                <table id="history-ep-table">
+                    <thead>
+                        <tr>
+                            <th>EP</th>
+                            <th>Volume (mL)</th>
+                            <th>pH</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-ep-tbody"></tbody>
+                </table>
+                <button class="cancel-btn" id="history-delete-btn">Delete titration</button>
+            </div>
+        </div>
+
     </div>
 
     <script type="module" src="/src/main.js"></script>

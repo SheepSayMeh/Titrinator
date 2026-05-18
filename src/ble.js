@@ -13,19 +13,15 @@ export async function connect(onNotify, onDisconnect) {
         ],
         optionalServices: [SERVICE_UUID]
     });
-
     device.addEventListener('gattserverdisconnected', onDisconnect);
-
     const server     = await device.gatt.connect();
     const service    = await server.getPrimaryService(SERVICE_UUID);
     cmdChar          = await service.getCharacteristic(CMD_UUID);
     const statusChar = await service.getCharacteristic(STATUS_UUID);
-
     await statusChar.startNotifications();
     statusChar.addEventListener('characteristicvaluechanged', (e) => {
         onNotify(new TextDecoder().decode(e.target.value));
     });
-
     return device.name;
 }
 
