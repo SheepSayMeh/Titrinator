@@ -1,6 +1,6 @@
 export function showOnly(id) {
     const screens = [
-        'no-ble', 'scan-screen', 'landing-screen',
+        'no-ble', 'scan-screen', 'reconnect-screen', 'landing-screen',
         'manual-screen', 'calibrate-screen',
         'pump-cal-screen', 'ph-cal-screen', 'titrate-screen', 'history-screen'
     ];

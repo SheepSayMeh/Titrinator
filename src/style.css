@@ -150,6 +150,60 @@ h1 {
 }
 .back-btn:hover { color: var(--accent); }
 
+/* ── Button pair: side-by-side, equal size, wraps to column if narrow ── */
+.btn-pair {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.btn-pair > button {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* ── Disabled flush/cancel buttons ── */
+.flush-btn:disabled  { border-color: var(--border); color: var(--border); cursor: not-allowed; }
+.cancel-btn:disabled { color: var(--border); cursor: not-allowed; }
+
+/* ── Memory bar ── */
+.mem-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mem-bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.mem-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease, background 0.4s ease;
+}
+.mem-bar-fill.warn  { background: var(--warn); }
+.mem-bar-fill.danger { background: var(--danger); }
+
+/* ── History list item with checkbox ── */
+.hist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.hist-item .menu-btn { flex: 1; }
+.hist-checkbox {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
 /* ── Menu buttons ── */
 .menu-btns {
     display: flex;

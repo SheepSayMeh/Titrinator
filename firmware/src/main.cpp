@@ -479,15 +479,13 @@ void handleCommand(const String& raw) {
         titId = preferences.getInt("tit_index", 0) + 1;
         preferences.putInt("tit_index", titId);
         preferences.end();
-        // Open file for writing — free oldest titration if SPIFFS is full
-        String path = "/tit_" + String(titId) + ".bin";
-        titFile = SPIFFS.open(path, "w", true);
-        if (!titFile) {
-            if (deleteOldestTitration()) {
-                titFile = SPIFFS.open(path, "w", true);
-            }
-            if (!titFile) { respond("ERR cannot open " + path); return; }
+        // Evict oldest titrations until at least 0.2 MB is free
+        while ((SPIFFS.totalBytes() - SPIFFS.usedBytes()) < 200 * 1024) {
+            if (!deleteOldestTitration()) break;
         }
+        String path = "/tit_" + String(titId) + ".bin";
+        titFile = SPIFFS.open(path, "w");
+        if (!titFile) { respond("ERR cannot open " + path); return; }
         // Write header: id (4B) | totalMl (4B) | direction (1B) | pad (3B)
         uint32_t hId = (uint32_t)titId;
         titFile.write((uint8_t*)&hId,       4);
@@ -557,16 +555,20 @@ void handleCommand(const String& raw) {
         }
         if (batch.length() > 0) batch += "\n";
         batch += "TMETA_END " + String(count);
+        batch += "\nMEM_INFO " + String(SPIFFS.usedBytes()) + " " + String(SPIFFS.totalBytes());
         respond(batch);
 
     } else if (cmd.startsWith("GET_TITRATION ")) {
         if (titStreamOpen) { titStreamFile.close(); titStreamOpen = false; }
-        int id = cmd.substring(14).toInt();
+        String rest  = cmd.substring(14);
+        int    space = rest.indexOf(' ');
+        int    id    = (space >= 0) ? rest.substring(0, space).toInt() : rest.toInt();
+        int    strideOverride = (space >= 0) ? rest.substring(space + 1).toInt() : 0;
         String path = "/tit_" + String(id) + ".bin";
         titStreamFile = SPIFFS.open(path, "r");
         if (!titStreamFile) { respond("ERR not found: " + path); return; }
         int totalPoints = (titStreamFile.size() > 12) ? (titStreamFile.size() - 12) / 8 : 1;
-        titStreamStride = max(1, totalPoints / 1000);
+        titStreamStride = (strideOverride > 0) ? strideOverride : max(1, totalPoints / 1000);
         titStreamFile.seek(12);  // skip header
         titStreamId   = id;
         titStreamOpen = true;
@@ -597,6 +599,13 @@ void handleCommand(const String& raw) {
     respond("PH_POINT " + String(phCalPointCount) +
             " mV=" + String(mV) + " ph=" + String(ph, 2));
             
+    } else if (cmd == "GET_STATUS") {
+        if (titRunning) {
+            respond("STATUS_TITRATING " + String(titId) + " " + String(titTotalMl, 2) + " " + String(titDirection));
+        } else {
+            respond("STATUS_IDLE");
+        }
+
     } else {
         respond("ERR unknown command: " + cmd);
     }
@@ -611,7 +620,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
         bleConnected = false;
         flushing = false;
-        disableMotor();
+        if (!titRunning) disableMotor();  // keep motor stepping during active titration
         if (titStreamOpen) { titStreamFile.close(); titStreamOpen = false; titStreamId = -1; }
         Serial.println("BLE client disconnected");
         NimBLEDevice::startAdvertising();

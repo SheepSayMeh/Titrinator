@@ -207,6 +207,23 @@ function clearData() {
     setLog('titrate-log', '', '');
 }
 
+// ── Public resume — called from main.js on BLE reconnect ─────────────
+export function resumeWithData(meta, points) {
+    dataPoints         = [...points];
+    totalVolumeMl      = meta.totalMl;
+    titrationConfig    = { expectDirection: meta.direction };
+    state              = 'RUNNING';
+    equivalencePoints  = [];
+    highlightedEpIndex = null;
+
+    showSetup(false);
+    requestAnimationFrame(() => {
+        if (!chart) createChart();
+        updateChart();
+        updateControls();
+    });
+}
+
 // ── Public reset — called from main.js when navigating to screen ──────
 export async function resetMeasurement() {
     if (state === 'RUNNING') {

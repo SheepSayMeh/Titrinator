@@ -3,15 +3,16 @@ import { connect, sendCommand, disconnect, isSupported } from './ble.js';
 import { showOnly, setLog, setScanning } from './ui.js';
 import { initPumpCalibration } from './pump-calibration.js';
 import { initPhCalibration }   from './ph-calibration.js';
-import { initMeasurement, resetMeasurement } from './measurement.js';
+import { initMeasurement, resetMeasurement, resumeWithData } from './measurement.js';
 import { initHistory } from './history.js';
 
 // ── State ──────────────────────────────────────────────────────
-let stepsPerMl  = 36000;
-let phCalValid  = false;
-let phCalCoeffs = null;   // { degree, a, b, c } in mV-space
+let stepsPerMl  = 36000;    // 36000 is the default value, but will be overwritten on connect if calibration exists
+let phCalValid  = false;    // This value will be overwritten once valid calibration data is stored in ESP32 persistent storage
+let phCalCoeffs = null;     // { degree, a, b, c } in mV-space
 let direction   = 1;
-let manualFlush = false;
+let manualFlush  = false;
+let reconnectMeta = null;   // set when STATUS_TITRATING received on connect
 
 // ── Init calibration modules ───────────────────────────────────
 const { onPumpNotify } = initPumpCalibration((val) => {
@@ -32,7 +33,7 @@ const { onMeasureNotify } = initMeasurement({
     onCancel:      goToLanding,
 });
 
-const { onShow: onHistoryShow, onHistoryNotify } = initHistory({
+const { onShow: onHistoryShow, onHistoryNotify, primeReconnect } = initHistory({
     onEnter: (visible) => { if (!visible) showOnly('landing-screen'); },
 });
 
@@ -76,9 +77,10 @@ document.getElementById('scan-btn').addEventListener('click', async () => {
         setScanning(true);
         const name = await connect(onNotify, onDisconnected);
         document.getElementById('connected-name').textContent = name;
-        await goToLanding();
         await sendCommand('GET_PUMP_CAL');
-        await sendCommand('GET_PH_CAL');
+        // GET_PH_CAL is sent when PUMP_CAL arrives, GET_STATUS when PH_CAL_* arrives,
+        // navigation when STATUS_* arrives — each step chained in onNotify to avoid
+        // rapid BLE notification overwrites.
     } catch (err) {
         setScanning(false);
         document.getElementById('scan-label').textContent =
@@ -119,10 +121,12 @@ function onNotify(msg) {
         onPumpNotify(msg);
     }
 
-    // Pump calibration value retrieved on connect
+    // Pump calibration value retrieved on connect — chain to GET_PH_CAL
     if (msg.startsWith('PUMP_CAL ')) {
         const val = parseFloat(msg.substring(9));
         if (val > 0) { stepsPerMl = val; updatePumpCalStatus(); }
+        sendCommand('GET_PH_CAL').catch(() => {});
+        return;
     }
 
     // pH calibration messages
@@ -131,28 +135,66 @@ function onNotify(msg) {
         onPhNotify(msg);
     }
 
-    // pH calibration status retrieved on connect
+    // pH calibration status retrieved on connect — chain to GET_STATUS
     if (msg === 'PH_CAL_NONE') {
         phCalValid = false;
         updatePhCalStatus();
+        sendCommand('GET_STATUS').catch(() => {});
+        return;
     }
-    if (msg.startsWith('PH_CAL_SAVED') || msg.startsWith('PH_CAL degree')) {
+    if (msg.startsWith('PH_CAL degree')) {
+        phCalValid = true;
+        updatePhCalStatus();
+        const m = msg.match(/degree=(\d+)\s+a=([-\d.eE+]+)\s+b=([-\d.eE+]+)\s+c=([-\d.eE+]+)/);
+        if (m) phCalCoeffs = { degree: parseInt(m[1]), a: parseFloat(m[2]), b: parseFloat(m[3]), c: parseFloat(m[4]) };
+        sendCommand('GET_STATUS').catch(() => {});
+        return;
+    }
+    // pH calibration saved after user-initiated calibration (not on connect)
+    if (msg.startsWith('PH_CAL_SAVED')) {
         phCalValid = true;
         updatePhCalStatus();
         const m = msg.match(/degree=(\d+)\s+a=([-\d.eE+]+)\s+b=([-\d.eE+]+)\s+c=([-\d.eE+]+)/);
         if (m) phCalCoeffs = { degree: parseInt(m[1]), a: parseFloat(m[2]), b: parseFloat(m[3]), c: parseFloat(m[4]) };
     }
 
+    // Reconnect status — navigates to landing or reconnect screen
+    if (msg === 'STATUS_IDLE') {
+        goToLanding();
+        return;
+    }
+    if (msg.startsWith('STATUS_TITRATING ')) {
+        const p = msg.split(' ');
+        reconnectMeta = { id: parseInt(p[1]), totalMl: parseFloat(p[2]), direction: parseInt(p[3]) };
+        showOnly('reconnect-screen');
+        return;
+    }
+
     // Titration data / control — route to measurement module
-    if (msg.startsWith('TDATA ')  || msg.startsWith('TRUN_DONE') ||
-        msg === 'TPAUSED'         || msg === 'TRESUMED') {
+    if (msg.startsWith('TDATA ') || msg.startsWith('TRUN_DONE') || msg === 'TRESUMED') {
         onMeasureNotify(msg);
+        return;
+    }
+
+    // TPAUSED: if in reconnect flow, load history data; otherwise pass to measurement
+    if (msg === 'TPAUSED') {
+        if (reconnectMeta) {
+            primeReconnect(reconnectMeta, (meta, points) => {
+                resumeWithData(meta, points);
+                showOnly('titrate-screen');
+                sendCommand('TRESUME').catch(() => {});
+                reconnectMeta = null;
+            });
+            sendCommand(`GET_TITRATION ${reconnectMeta.id}`).catch(() => {});
+        } else {
+            onMeasureNotify(msg);
+        }
         return;
     }
 
     // History data — route to history module
     if (msg.startsWith('TMETA')   || msg.startsWith('TROWS ') ||
-        msg.startsWith('TDATA_END')) {
+        msg.startsWith('TDATA_END') || msg.startsWith('MEM_INFO ')) {
         onHistoryNotify(msg);
         return;
     }
@@ -180,6 +222,18 @@ function onDisconnected() {
     document.getElementById('scan-label').textContent =
         'Disconnected. Press scan to reconnect.';
 }
+
+// ── Reconnect screen ───────────────────────────────────────
+document.getElementById('reconnect-resume-btn').addEventListener('click', async () => {
+    try { await sendCommand('TPAUSE'); } catch(e) {}
+    // TPAUSED notification triggers primeReconnect + GET_TITRATION in onNotify
+});
+
+document.getElementById('reconnect-interrupt-btn').addEventListener('click', async () => {
+    try { await sendCommand('TSTOP'); } catch(e) {}
+    reconnectMeta = null;
+    goToLanding();
+});
 
 // ── Landing navigation ─────────────────────────────────────────
 document.getElementById('btn-manual').addEventListener('click', leaveToManual);
