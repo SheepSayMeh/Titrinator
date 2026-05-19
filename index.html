@@ -6,8 +6,8 @@
     <title>Titrinator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Titrinator/assets/index-a4OGjx6Q.js"></script>
-  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-DxGe138P.css">
+  <script type="module" crossorigin src="/Titrinator/assets/index-CEGYt7z4.js"></script>
+  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-E1YYOLU_.css">
 </head>
 <body>
     <div class="header">
@@ -34,6 +34,15 @@
                 <div class="scan-label" id="scan-label">Press scan to find devices</div>
             </div>
             <button class="scan-btn" id="scan-btn">SCAN FOR DEVICES</button>
+        </div>
+
+        <!-- ── Reconnect screen ── -->
+        <div id="reconnect-screen" style="flex-direction:column; gap:16px;">
+            <div class="cal-hint">Running titration detected, resume?</div>
+            <div class="btn-pair">
+                <button class="primary-btn" id="reconnect-resume-btn">RESUME</button>
+                <button class="flush-btn"   id="reconnect-interrupt-btn">INTERRUPT</button>
+            </div>
         </div>
 
         <!-- ── Landing screen ── -->
@@ -261,6 +270,22 @@
             <div class="screen-header">
                 <button class="back-btn" id="history-back-btn">← Back</button>
                 <div class="screen-title">History</div>
+            </div>
+            <!-- Memory bar -->
+            <div class="mem-bar-row" id="history-mem-bar">
+                <div class="mem-bar-track">
+                    <div class="mem-bar-fill" id="history-mem-fill"></div>
+                </div>
+                <div class="cal-hint" id="history-mem-text">Storage: —</div>
+            </div>
+            <!-- Actions bar — always visible, buttons disabled when nothing selected -->
+            <div id="history-action-bar" style="display:flex; flex-direction:column; gap:8px;">
+                <div class="cal-hint" id="history-sel-count">0 selected</div>
+                <div class="btn-pair">
+                    <button class="flush-btn" id="hist-export-fast-btn" disabled>Export (fast)</button>
+                    <button class="flush-btn" id="hist-export-slow-btn" disabled>Export (slow)</button>
+                    <button class="flush-btn" id="hist-delete-sel-btn" disabled>Delete selected</button>
+                </div>
             </div>
             <!-- List view -->
             <div id="history-list" class="menu-btns"></div>
