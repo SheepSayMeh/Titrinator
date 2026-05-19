@@ -277,7 +277,11 @@ async function startDelete() {
 // ── Module init ───────────────────────────────────────────────────────
 export function initHistory({ onEnter }) {
     const backBtn = document.getElementById('history-back-btn');
-    if (backBtn) backBtn.addEventListener('click', () => onEnter(false));
+    if (backBtn) backBtn.addEventListener('click', () => {
+        const detail = document.getElementById('history-detail');
+        if (detail && detail.style.display !== 'none') { showList(); return; }
+        onEnter(false);
+    });
 
     document.getElementById('hist-export-fast-btn')
         .addEventListener('click', () => startExport(0));

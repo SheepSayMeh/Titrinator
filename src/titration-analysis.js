@@ -2,8 +2,8 @@
 // Shared between measurement.js (live titration) and history.js (stored data).
 
 const SMOOTH_HALF      = 5;    // half-window for pH smoothing (full window = 11)
-const EP_MIN_THRESHOLD = 1.0;  // noise floor — minimum |d(pH)/dV| for any EP candidate
-const EP_NMS_WINDOW_ML = 1.0;  // NMS window — within this span only the strongest candidate survives
+const EP_MIN_THRESHOLD = 0.8;  // noise floor — minimum |d(pH)/dV| for any EP candidate
+const EP_NMS_WINDOW_ML = 1.0;  // NMS window — within this span only the strongest candidate survives. Value in milliliters.
 
 export function smoothedPh(points, index, halfWindow = SMOOTH_HALF) {
     const lo = Math.max(0, index - halfWindow);
@@ -56,7 +56,7 @@ export function findEquivalencePoints(points, direction) {
         if (strength < EP_MIN_THRESHOLD) continue;
         const absA = Math.abs(a2), absB = Math.abs(b2);
         const eqVol = (points[i].volume * absB + points[i + 1].volume * absA) / (absA + absB);
-        candidates.push({ volume: eqVol, ph: interpolatePhAt(points, eqVol), strength });
+        candidates.push({ volume: eqVol, ph: interpolatePhAt(points, eqVol), strength, crossingIdx: i });
     }
 
     // Phase 2: non-maximum suppression — strongest candidate wins within each 1 mL window
@@ -67,8 +67,36 @@ export function findEquivalencePoints(points, direction) {
             accepted.push(c);
     }
 
+    // Phase 3: refine each EP volume by fitting a line through the surrounding d²pH/dV² values
+    // and solving for the exact zero crossing.
     accepted.sort((a, b) => a.volume - b.volume);
-    return accepted.map(({ volume, ph }) => ({ volume, ph }));
+    return accepted.map(({ volume, ph, crossingIdx }) => {
+        const pairs = [];
+        for (let k = crossingIdx - 2; k <= crossingIdx + 3; k++) {
+            if (k >= 0 && k < points.length && d2pdv2[k] !== undefined)
+                pairs.push([points[k].volume, d2pdv2[k]]);
+        }
+        if (pairs.length >= 2) {
+            // Least-squares line: d2 = m·v + b  →  zero at v = −b / m
+            const n = pairs.length;
+            let sv = 0, sd = 0, svv = 0, svd = 0;
+            for (const [v, d] of pairs) { sv += v; sd += d; svv += v * v; svd += v * d; }
+            const det = n * svv - sv * sv;
+            if (Math.abs(det) > 1e-12) {
+                const m = (n * svd - sv * sd) / det;
+                const b = (sd - m * sv) / n;
+                if (Math.abs(m) > 1e-12) {
+                    const refined = -b / m;
+                    const vLo = pairs[0][0], vHi = pairs[pairs.length - 1][0];
+                    if (refined >= vLo && refined <= vHi) {
+                        volume = refined;
+                        ph     = interpolatePhAt(points, refined);
+                    }
+                }
+            }
+        }
+        return { volume, ph };
+    });
 }
 
 export function populateEpTable(tbody, eps) {
