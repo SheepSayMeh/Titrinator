@@ -1,5 +1,6 @@
 **Titrinator**  
-Automatic titration system built on an ESP32, controlled through a browser via the [Web Bluetooth API. The web frontend communicates wirelessly with the ESP32 to drive a peristaltic pump, read a pH probe, and record titration curves in real time.](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API "https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API")  
+Automatic titration system built on an ESP32, controlled through a browser via the [Web Bluetooth API.](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API "https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API") 
+The web frontend communicates wirelessly with the ESP32 to drive a peristaltic pump, read a pH probe, and record titration curves in real time.
 ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANklEQVR4nO3OQQmAABRAsSeYxZw/lVeDGMACBrCCNxG2BFtmZquOAAD4i3Ot7mr/egIAwGvXA6fOBdd+dKAKAAAAAElFTkSuQmCC)  
 **Architecture**  
 ┌─────────────────────────────┐        BLE         ┌──────────────────────────┐  
