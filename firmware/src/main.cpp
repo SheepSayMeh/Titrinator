@@ -32,7 +32,7 @@
 #define ADC_SAMPLES           256     // average this many reads for stability
 #define U_EMA_ALPHA           0.2f    // exponential moving average factor for voltage smoothing
 #define DUDV_EMA_ALPHA        0.05f    // EMA factor for dU/dV smoothing (higher = more responsive)
-#define WDT_YIELD_EVERY       10
+#define WDT_YIELD_EVERY       2
 
 // ── BLE UUIDs ────────────────────────────────────────────────────
 #define SERVICE_UUID     "1aa974de-6f63-4a76-8a1f-aab707432a77"
@@ -716,8 +716,13 @@ void setup() {
     preferences.end();
 
     stepQueue = xQueueCreate(10, sizeof(StepRequest));
-    xTaskCreatePinnedToCore(motorTask,    "motorTask",   4096, NULL, 2, NULL, 1);
+#if CONFIG_FREERTOS_UNICORE
+    xTaskCreate(motorTask,     "motorTask",  4096, NULL, 2, NULL);
+    xTaskCreate(streamingTask, "streamTask", 4096, NULL, 1, NULL);
+#else
+    xTaskCreatePinnedToCore(motorTask,     "motorTask",  4096, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(streamingTask, "streamTask", 4096, NULL, 1, NULL, 0);
+#endif
 
     NimBLEDevice::init("Titrinator-00000");
     NimBLEDevice::setMTU(512);
