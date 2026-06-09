@@ -6,8 +6,8 @@
     <title>Titrinator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Titrinator/assets/index-CEGYt7z4.js"></script>
-  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-E1YYOLU_.css">
+  <script type="module" crossorigin src="/Titrinator/assets/index-CPloZLb9.js"></script>
+  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-X9Mm36yE.css">
 </head>
 <body>
     <div class="header">
@@ -218,7 +218,7 @@
             <!-- Setup (shown before start / after cancel) -->
             <div id="titrate-setup" style="display:flex; flex-direction:column; gap:16px;">
                 <div class="screen-header">
-                    <button class="back-btn" id="titrate-back-btn">← Back</button>
+                    <button class="back-btn" id="titrate-back-btn-setup">← Back</button>
                     <div class="screen-title">Titration</div>
                 </div>
                 <div class="cal-section">
@@ -234,6 +234,10 @@
 
             <!-- Live display (shown during / after titration) -->
             <div id="titrate-display" style="display:none; flex-direction:column; gap:12px;">
+                <div class="screen-header">
+                    <button class="back-btn" id="titrate-back-btn-display">← Back</button>
+                    <div class="screen-title">Titration</div>
+                </div>
                 <div class="titrate-readouts">
                     <div class="titrate-readout">
                         <span class="status-label">pH</span>
@@ -258,7 +262,7 @@
             </div>
 
             <div class="titrate-controls">
-                <button class="primary-btn" id="titrate-action-btn">START</button>
+                <button class="primary-btn" id="titrate-action-btn">CONTINUE</button>
                 <button class="flush-btn" id="titrate-cancel-btn" style="display:none;">CANCEL</button>
                 <button class="primary-btn" id="titrate-finish-btn" style="display:none;">FINISH</button>
             </div>
@@ -289,6 +293,9 @@
             </div>
             <!-- List view -->
             <div id="history-list" class="menu-btns"></div>
+            <div id="history-action-bar" style="display:flex; flex-direction:column; gap:8px;">
+                <button class="cancel-btn" id="hist-reset-storage-btn" style="margin-top:8px;">Reset storage</button>
+            </div>
             <!-- Loading view (shown while fetching titration data) -->
             <div id="history-loading" style="display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px 0;">
                 <div class="cal-hint" id="history-loading-text">Loading…</div>
