@@ -214,8 +214,6 @@ Planned features include:
 * Temperature compensation
 * Additional titration methods
 * Improved export formats
-* Enhanced endpoint detection
-* Multi-pump support
 
 ---
 
