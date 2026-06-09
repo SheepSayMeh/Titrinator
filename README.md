@@ -29,14 +29,16 @@ Unlike traditional manual burettes, Titrinator dispenses titrant using a calibra
 
 The current implementation uses:
 
-| Component                  | Description                       |
-| -------------------------- | --------------------------------- |
-| ESP32                      | Main controller and BLE interface |
-| TMC2209                    | Stepper motor driver              |
-| NEMA17 Stepper Motor       | Drives the pump                   |
-| Peristaltic Pump           | Delivers titrant                  |
-| pH Probe + Interface Board | Measures solution pH              |
-| Power Supply               | Powers the motor and electronics  |
+| Component                  | Description                             |
+| -------------------------- | ----------------------------------------|
+| ESP32                      | Main controller and BLE interface       |
+| TMC2209                    | Stepper motor driver                    |
+| NEMA17 Stepper Motor       | Drives the pump                         |
+| Peristaltic Pump           | Delivers titrant                        |
+| pH Probe + Interface Board | Measures solution pH                    |
+| 24 V Power Supply          | Powers the motor and electronics        |
+| Step down converter        | Steps down to 5v for use by electronics |
+
 
 ### Peristaltic Pump
 
