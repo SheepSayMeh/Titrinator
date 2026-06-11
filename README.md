@@ -7,7 +7,7 @@ Titrinator combines a motorized burette, wireless control, and real-time data ac
 Unlike traditional manual burettes, Titrinator dispenses titrant using a calibrated peristaltic pump driven by a NEMA17 stepper motor and a TMC2209 driver. The system continuously measures pH, records titration curves, and automatically detects equivalence points while being controlled entirely from a web browser over Bluetooth Low Energy (BLE).
 
 ![The Titrinator](pics/IMG_20260611_133615.jpg)
-
+![The Titrinator back](pics/IMG_20260611_133711.jpg)
 ---
 
 ## Features
