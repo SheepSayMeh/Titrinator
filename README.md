@@ -1,102 +1,222 @@
-**Titrinator**  
-Automatic titration system built on an ESP32, controlled through a browser via the [Web Bluetooth API.](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API "https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API") 
-The web frontend communicates wirelessly with the ESP32 to drive a peristaltic pump, read a pH probe, and record titration curves in real time.
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANklEQVR4nO3OQQmAABRAsSeYxZw/lVeDGMACBrCCNxG2BFtmZquOAAD4i3Ot7mr/egIAwGvXA6fOBdd+dKAKAAAAAElFTkSuQmCC)  
-**Architecture**  
-┌─────────────────────────────┐        BLE         ┌──────────────────────────┐  
- │  Browser (Chrome / Bluefy)  │ ◄────────────────► │  ESP32 firmware          │  
- │  Vite + Vanilla JS           │                    │  pH probe (ADC)          │  
- │  uPlot (charting)            │                    │  Stepper pump driver     │  
- │  jszip (export)              │                    │  Flash storage           │  
- └─────────────────────────────┘                    └──────────────────────────┘  
-   
-The browser is the only interface; no app install, no server, no USB connection required during operation. The ESP32 firmware stores titration records internally and streams live pH and volume data over BLE.  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANElEQVR4nO3OMQ0AIAwAwZIgBKnVgjN8dGDBABMhuZt+/JaZIyJmAADwi9VP1NMNAABu1AaU3AUhiyfJeAAAAABJRU5ErkJggg==)  
-**Hardware**  
-| | |  
-|-|-|  
-| **Component** | **Notes** |   
-| ESP32 module | Any variant with BLE; WROOM-32 confirmed working |   
-| pH probe + signal board | Analog output to ESP32 ADC |   
-| Stepper motor + driver | Drives the peristaltic pump |   
-| Peristaltic pump | Tubing and fittings for reagent delivery |   
-| Power supply | Sized to stepper current draw |   
-   
-***Note:*** * Exact pin assignments and signal conditioning circuit are defined in the firmware. Refer to * *firmware/* * for schematic details.*  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OMQ2AABAAsSNhwgJWEPcbJpnRgQU2QtIq6DIze3UGAMBf3Gu1VcfXEwAAXrseaIkEMIPgIvAAAAAASUVORK5CYII=)  
-**Repository Structure**  
-firmware/        ESP32 firmware (C++, PlatformIO)  
- src/             Web frontend JavaScript  
- public/          Static assets  
- index.html       Single-page app entry point  
- vite.config.js   Build configuration  
- package.json     JS dependencies and scripts  
-   
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANklEQVR4nO3OQQmAABRAsSfYxZo/jVEMYQLPJrCCNxG2BFtmZquOAAD4i3Ot7mr/egIAwGvXA4rLBc059ysnAAAAAElFTkSuQmCC)  
-**Browser Requirements**  
-Web Bluetooth requires:  
-- **Chrome** on Android or desktop (Linux, macOS, Windows)  
-- **Not** supported in Firefox or Safari  
-- iOS: use [Bluefy](https://apps.apple.com/app/bluefy/id1492814321 "https://apps.apple.com/app/bluefy/id1492814321")  
-The page can be served locally or from GitHub Pages; either way the BLE connection runs entirely client-side.  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OQQmAABRAsSfYxKK/kJXEkyE8WcGbCFuCLTOzVXsAAPzFsVZ3dX4cAQDgvesB/vEF9H9odtUAAAAASUVORK5CYII=)  
-**Setup**  
-**Firmware**  
-1. Install [PlatformIO.](https://platformio.org/ "https://platformio.org/")  
-2. Open the firmware/ folder as a project.  
-3. Adjust pin definitions for your hardware.  
-4. Flash to the ESP32:  
-5. pio run --target upload  
-   
-**Web App**  
-   
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OQQmAABRAsSd40A5GMORPYEt7WMGbCFuCLTNzVFcAAPzFvVZbdX49AQDgtf0BSrIDUgOg4eAAAAAASUVORK5CYII=)  
-**Usage**  
-**First time**  
-1. Open the app in a supported browser.  
-2. Press **Scan for Devices** and pair with the ESP32.  
-3. Go to **Calibrate → Pump**:  
-  - Flush the tubing to remove air.  
-  - Run the 50 000-step calibration routine, weigh the collected water, enter the mass. The firmware stores steps-per-mL.  
-4. Go to **Calibrate → pH Probe**:  
-  - Select 2-point or 3-point calibration.  
-  - Submerge the probe in each buffer solution, wait for the live voltage reading to stabilise, and confirm each point.  
-  - A linearity deviation indicator flags non-ideal probe behaviour.  
-**Running a titration**  
-1. From the home screen, select **Titrate** (enabled only after both calibrations are complete).  
-2. Choose the titration type and set the total volume (mL).  
-3. Place the probe and pump outlet in the analyte vessel.  
-4. Press **Start**.  
-During titration:  
-- Live pH and dispensed volume are displayed.  
-- A pH vs. volume curve is plotted in real time.  
-- Detected equivalence points are listed with volume and pH.  
-Press **Finish** to end and store the result, or  **Cancel** to abort.  
-**Manual control**  
-**Manual Control** allows stepping the pump by a set number of steps or a target volume, with selectable direction (forward/reverse) and speed (slow/normal/fast). Flush is available separately.  
-**History**  
-The **History** screen lists titrations stored on the ESP32's flash. A memory bar indicates storage usage. Titrations can be:  
-- Viewed with the recorded curve and equivalence point table.  
-- Exported as a ZIP archive via **Export (fast)** or  **Export (slow)** — the two modes likely differ in BLE transfer chunk size; use *slow* if the fast export drops packets.  
-- Deleted individually or in bulk.  
-**Reconnect**  
-If the browser loses the BLE connection during a titration, reloading and reconnecting presents a **Resume / Interrupt** choice, allowing the titration to continue from where it left off.  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OQQmAABRAsSd49m4v6wg/pwmMYQVvImwJtszMXp0BAPAX91pt1fH1BACA164Hoq8EQMMPmF8AAAAASUVORK5CYII=)  
-**Dependencies**  
-| | | |  
-|-|-|-|  
-| **Package** | **Version** | **Purpose** |   
-| [uPlot](https://github.com/leeoniya/uPlot "https://github.com/leeoniya/uPlot") | ^1.6.32 | Titration curve rendering |   
-| [jszip](https://stuk.github.io/jszip/ "https://stuk.github.io/jszip/") | ^3.10.1 | History export packaging |   
-| [Vite](https://vite.dev/ "https://vite.dev/") | ^8.0.0 | Build tooling |   
-| [gh-pages](https://github.com/tschaub/gh-pages "https://github.com/tschaub/gh-pages") | ^6.3.0 | GitHub Pages deployment |   
-   
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANklEQVR4nO3OYQ1AABSAwc8mi5wvkwZyCKCAACr4Z7a7BLfMzFYdAQDwF+da3dX+9QQAgNeuB6feBdUJcyS2AAAAAElFTkSuQmCC)  
-**Limitations**  
-- Web Bluetooth is not available in all browsers; see [browser compatibility.](#anchor-1 "#anchor-1")  
-- Temperature calibration is not yet implemented (shown as disabled in the UI).  
-- Titration type definitions are firmware-side; adding new types requires a firmware change.  
-- No authentication on the BLE connection; anyone in range with a compatible browser can connect.  
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnEAAAACCAYAAAA3pIp+AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANUlEQVR4nO3OMQ2AABAAsSNBCUpfEJ5YGBDBgAU2QtIq6DIzW7UHAMBfHGt1V+fXEwAAXrseHDYF+yOk59sAAAAASUVORK5CYII=)  
-**License**  
-Copyright (c) 2026 SheepSayMeh  
+# Titrinator
+
+An open-source automated titration system built around an ESP32, a peristaltic pump, and a pH probe.
+
+Titrinator combines a motorized burette, wireless control, and real-time data acquisition into a low-cost platform suitable for chemistry education, hobby laboratories, and experimental automation projects.
+
+Unlike traditional manual burettes, Titrinator dispenses titrant using a calibrated peristaltic pump driven by a NEMA17 stepper motor and a TMC2209 driver. The system continuously measures pH, records titration curves, and automatically detects equivalence points while being controlled entirely from a web browser over Bluetooth Low Energy (BLE).
+
+![System overview](docs/images/titrinator.jpg)
+
+---
+
+## Features
+
+* Automated titrant dispensing
+* Real-time pH monitoring
+* Live titration curve plotting
+* Automatic equivalence point detection
+* Wireless browser-based control
+* No dedicated application required
+* Local data storage on the ESP32
+* Export of recorded titrations
+* Pump and pH probe calibration routines
+* Open-source hardware and software
+
+---
+
+## Hardware Overview
+
+The current implementation uses:
+
+| Component                  | Description                             |
+| -------------------------- | ----------------------------------------|
+| ESP32                      | Main controller and BLE interface       |
+| TMC2209                    | Stepper motor driver                    |
+| NEMA17 Stepper Motor       | Drives the pump                         |
+| Peristaltic Pump           | Delivers titrant                        |
+| pH Probe + Interface Board | Measures solution pH                    |
+| 24 V Power Supply          | Powers the motor and electronics        |
+| Step down converter        | Steps down to 5v for use by electronics |
+
+
+### Peristaltic Pump
+
+The system uses a laboratory-style peristaltic pump driven by a NEMA17 stepper motor.
+
+Advantages of a peristaltic pump:
+
+* The reagent only contacts the tubing
+* Suitable for corrosive solutions
+* No valves required
+* Easy tubing replacement
+* Simple maintenance
+* Accurate volumetric control after calibration
+
+### Architecture
+
+```text
+┌─────────────────────────────┐      BLE      ┌──────────────────────────┐
+│ Browser Interface           │ ◄──────────► │ ESP32 Firmware           │
+│ Vite + JavaScript           │              │ Pump Control             │
+│ uPlot                       │              │ pH Measurement           │
+│ JSZip                       │              │ Data Logging             │
+└─────────────────────────────┘              └──────────────────────────┘
+```
+
+The browser acts as the complete user interface. No cloud services, server software, or USB connection are required during operation.
+
+---
+
+## Repository Structure
+
+```text
+firmware/        ESP32 firmware
+src/             Web application source
+public/          Static assets
+index.html       Application entry point
+vite.config.js   Vite configuration
+package.json     Front-end dependencies
+```
+
+---
+
+## Browser Compatibility
+
+The user interface relies on the Web Bluetooth API.
+
+Supported:
+
+* Chrome (Windows, Linux, macOS)
+* Chrome (Android)
+* Chromium-based browsers
+
+iOS:
+
+* Bluefy browser
+
+Not supported:
+
+* Firefox
+* Safari
+
+---
+
+## Installation
+
+### Firmware
+
+Install PlatformIO and open the `firmware/` directory.
+
+Upload the firmware:
+
+```bash
+pio run --target upload
+```
+
+Adjust pin assignments if your hardware differs from the reference design.
+
+### Web Interface
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+Build a production version:
+
+```bash
+npm run build
+```
+
+---
+
+## Calibration
+
+### Pump Calibration
+
+1. Prime the tubing.
+2. Run the calibration routine.
+3. Collect and weigh the dispensed water.
+4. Enter the measured mass.
+5. The firmware calculates and stores the conversion factor.
+
+Calibration should be repeated whenever tubing is replaced.
+
+### pH Calibration
+
+The firmware supports both two-point and three-point calibration.
+
+1. Select the calibration mode.
+2. Place the probe in each buffer solution.
+3. Wait for the reading to stabilise.
+4. Confirm the calibration point.
+
+A linearity indicator highlights probe behaviour that deviates from the expected response.
+
+---
+
+## Running a Titration
+
+1. Connect to the ESP32.
+2. Verify pump and pH calibrations.
+3. Select the titration type.
+4. Enter the target volume.
+5. Place the probe and dosing tube into the analyte.
+6. Start the titration.
+
+During operation the system displays:
+
+* Current pH
+* Dispensed volume
+* Live titration curve
+* Detected equivalence points
+
+Results are stored locally and can later be reviewed or exported.
+
+---
+
+## Data Storage
+
+Titration records are stored in the ESP32 flash memory.
+
+Stored data includes:
+
+* pH measurements
+* Dispensed volume
+* Titration curves
+* Equivalence point calculations
+
+Records can be exported as ZIP archives for further analysis.
+
+---
+
+## Current Limitations
+
+* Temperature compensation is not yet implemented.
+* Web Bluetooth support is browser dependent.
+* New titration modes currently require firmware modification.
+* BLE communication is not authenticated.
+
+---
+
+## Future Development
+
+Planned features include:
+
+* Temperature compensation
+* Additional titration methods
+* Improved export formats
+
+---
+
+## License
+
+Copyright © 2026 SheepSayMeh
