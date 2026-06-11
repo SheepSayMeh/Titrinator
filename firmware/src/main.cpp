@@ -6,12 +6,22 @@
 #include <esp_adc_cal.h>
 #include <SPIFFS.h>
 
-// ── Pins ──────────────────────────────────────────────────────────
-#define STEP_PIN     27
-#define DIR_PIN      26
-#define EN_PIN       25
-#define PH_PIN       32
-#define TEMP_PIN     33
+// ── Device defaults ───────────────────────────────────────────────
+#define DEFAULT_DEVICE_NAME "Titrinator-00000"
+
+// ── Pin defaults ─────────────────────────────────────────────────
+#if CONFIG_IDF_TARGET_ESP32C3
+#define DEFAULT_STEP_PIN    10
+#define DEFAULT_DIR_PIN     3
+#define DEFAULT_EN_PIN      1
+#define DEFAULT_SENSOR_PIN  0
+#else
+#define DEFAULT_STEP_PIN    27
+#define DEFAULT_DIR_PIN     26
+#define DEFAULT_EN_PIN      25
+#define DEFAULT_SENSOR_PIN  32
+#endif
+#define DEFAULT_TEMP_PIN    33
 
 // ── Speed constants (µs between steps) ───────────────────────────
 #define STEP_DELAY_FLUSH        200
@@ -48,6 +58,12 @@ volatile int currentStepDelay = STEP_DELAY_NORMAL;
 String serialBuffer           = "";
 volatile bool streaming       = false;
 const unsigned long STREAM_INTERVAL_MS = 100;
+String deviceName             = DEFAULT_DEVICE_NAME;
+int stepPin                   = DEFAULT_STEP_PIN;
+int dirPin                    = DEFAULT_DIR_PIN;
+int enPin                     = DEFAULT_EN_PIN;
+int sensorPin                 = DEFAULT_SENSOR_PIN;
+int tempPin                   = DEFAULT_TEMP_PIN;
 
 // ── Forward declarations ──────────────────────────────────────────
 void respond(const String& msg);
@@ -123,7 +139,8 @@ float mvEma   = -1.0f;                 // EMA of millivolts; -1 = uninitialised 
 float dUdVEma = -1.0f;                 // EMA of |dU/dV|; -1 = uninitialised sentinel
 
 // Rolling buffer for dU/dV computation (Core 0 only)
-#define DERIV_BUF 6
+#define DERIV_POINTS 5
+#define DERIV_BUF DERIV_POINTS
 struct TPoint { float volume; float voltage; };
 TPoint derivBuf[DERIV_BUF];
 int    derivCount = 0;
@@ -148,13 +165,13 @@ uint32_t adcToMillivolts(int adc) {
 }
 
 // ── Motor helpers ─────────────────────────────────────────────────
-void enableMotor()  { digitalWrite(EN_PIN, LOW); }
-void disableMotor() { digitalWrite(EN_PIN, HIGH); }
+void enableMotor()  { digitalWrite(enPin, LOW); }
+void disableMotor() { digitalWrite(enPin, HIGH); }
 
 void stepOnce(int delayUs) {
-    digitalWrite(STEP_PIN, HIGH);
+    digitalWrite(stepPin, HIGH);
     delayMicroseconds(delayUs);
-    digitalWrite(STEP_PIN, LOW);
+    digitalWrite(stepPin, LOW);
     delayMicroseconds(delayUs);
 }
 
@@ -179,6 +196,34 @@ float loadPumpCalibration() {
     float val = preferences.getFloat("steps_per_ml", DEFAULT_STEPS_PER_ML);
     preferences.end();
     return val;
+}
+
+void loadDeviceConfig() {
+    preferences.begin("titrinator", true);
+    deviceName = preferences.getString("device_name", DEFAULT_DEVICE_NAME);
+    stepPin    = preferences.getInt("step_pin", DEFAULT_STEP_PIN);
+    dirPin     = preferences.getInt("dir_pin", DEFAULT_DIR_PIN);
+    enPin      = preferences.getInt("en_pin", DEFAULT_EN_PIN);
+    sensorPin  = preferences.getInt("sensor_pin", DEFAULT_SENSOR_PIN);
+    tempPin    = preferences.getInt("temp_pin", DEFAULT_TEMP_PIN);
+    preferences.end();
+}
+
+void saveDeviceConfig(const String& name, int step, int dir, int en, int sensor) {
+    preferences.begin("titrinator", false);
+    preferences.putString("device_name", name);
+    preferences.putInt("step_pin", step);
+    preferences.putInt("dir_pin", dir);
+    preferences.putInt("en_pin", en);
+    preferences.putInt("sensor_pin", sensor);
+    preferences.end();
+}
+
+void configurePins() {
+    pinMode(stepPin, OUTPUT);
+    pinMode(dirPin,  OUTPUT);
+    pinMode(enPin,   OUTPUT);
+    disableMotor();
 }
 
 void savePhCalibration() {
@@ -287,7 +332,7 @@ void motorTask(void* pvParameters) {
                 // ── Autonomous titration flow ──────────────────────
                 titStepCount = 0;
                 currentStepDelay = TIT_MIN_DELAY;
-                digitalWrite(DIR_PIN, titDirection > 0 ? HIGH : LOW);
+                digitalWrite(dirPin, titDirection > 0 ? HIGH : LOW);
                 enableMotor();
                 while (titRunning) {
                     if (titPause) {
@@ -307,7 +352,7 @@ void motorTask(void* pvParameters) {
                 titDone = true;   // signal main loop to close file and notify
 
             } else if (req.steps == 0) {
-                digitalWrite(DIR_PIN, HIGH);
+                digitalWrite(dirPin, HIGH);
                 enableMotor();
                 long i = 0;
                 while (flushing) {
@@ -316,7 +361,7 @@ void motorTask(void* pvParameters) {
                 }
                 disableMotor();
             } else {
-                digitalWrite(DIR_PIN, req.steps > 0 ? HIGH : LOW);
+                digitalWrite(dirPin, req.steps > 0 ? HIGH : LOW);
                 long absSteps = abs(req.steps);
                 enableMotor();
                 for (long i = 0; i < absSteps; i++) {
@@ -453,6 +498,59 @@ void handleCommand(const String& raw) {
                 " cal=" + String(loadPumpCalibration()) +
                 " ph_cal=" + String(phCalValid ? "yes" : "no"));
 
+    } else if (cmd.startsWith("SET_DEVICE_CONFIG ")) {
+        String jsonStr = cmd.substring(18);
+        Serial.println("DEBUG: Received SET_DEVICE_CONFIG");
+        Serial.println("DEBUG: JSON: " + jsonStr);
+
+        JsonDocument doc;
+        DeserializationError err = deserializeJson(doc, jsonStr);
+        if (err) {
+            Serial.println("DEBUG: JSON parse error: " + String(err.c_str()));
+            respond("ERR invalid device config JSON");
+            return;
+        }
+
+        String name = doc["name"] | "";
+        int step    = doc["pins"]["STEP"]   | -1;
+        int dir     = doc["pins"]["DIR"]    | -1;
+        int en      = doc["pins"]["EN"]     | -1;
+        int sensor  = doc["pins"]["SENSOR"] | -1;
+
+        Serial.println("DEBUG: Parsed - name=" + name + " step=" + String(step) + " dir=" + String(dir) + " en=" + String(en) + " sensor=" + String(sensor));
+
+        if (name.length() < 1 || name.length() > 31) {
+            respond("ERR device name must be 1-31 chars"); return;
+        }
+        if (step < 0 || dir < 0 || en < 0 || sensor < 0) {
+            respond("ERR pins must be non-negative"); return;
+        }
+        if (step == dir || step == en || step == sensor || dir == en || dir == sensor || en == sensor) {
+            respond("ERR pins must be unique"); return;
+        }
+
+        saveDeviceConfig(name, step, dir, en, sensor);
+        deviceName = name;
+        stepPin = step;
+        dirPin = dir;
+        enPin = en;
+        sensorPin = sensor;
+        configurePins();
+        respond("DEVICE_CONFIG_SAVED reboot_required=1");
+
+    } else if (cmd == "GET_DEVICE_CONFIG") {
+        String msg = "DEVICE_CONFIG name=" + deviceName +
+                     " step=" + String(stepPin) +
+                     " dir=" + String(dirPin) +
+                     " en=" + String(enPin) +
+                     " sensor=" + String(sensorPin);
+        respond(msg);
+
+    } else if (cmd == "RESTART") {
+        respond("RESTARTING");
+        delay(100);
+        ESP.restart();
+
     } else if (cmd.startsWith("TSTART")) {
         // TSTART <volume_ml> <steps_per_ml> <direction>
         if (titRunning) { respond("ERR titration already running"); return; }
@@ -586,6 +684,13 @@ void handleCommand(const String& raw) {
             respond("ERR not found: " + path);
         }
 
+    } else if (cmd == "SPIFFS_FORMAT") {
+        if (SPIFFS.format()) {
+            respond("SPIFFS_FORMATTED");
+        } else {
+            respond("ERR format failed");
+        }
+
     } else if (cmd.startsWith("PH_CAL_SET")) {
     // PH_CAL_SET <mV> <ph> — store a calibration point with known mV value
     int space1    = cmd.indexOf(' ', 11);
@@ -651,10 +756,10 @@ void streamingTask(void* pvParameters) {
 
         if (!streaming && !titRunning) continue;
 
-        int rawAdc = readADCAveraged(PH_PIN);
+        int rawAdc = readADCAveraged(sensorPin);
         uint32_t mV = adcToMillivolts(rawAdc);
 
-        // EMA in mV space — physically meaningful, used for all computation
+        // Exponential Moving Average (EMA) in mV space — physically meaningful, used for all computation
         if (mvEma < 0.0f) mvEma = (float)mV;
         else mvEma = U_EMA_ALPHA * (float)mV + (1.0f - U_EMA_ALPHA) * mvEma;
 
@@ -663,12 +768,25 @@ void streamingTask(void* pvParameters) {
             // Derivative in mV space for speed control (Core 0 only)
             derivBuf[derivCount % DERIV_BUF] = { vol, mvEma };
             derivCount++;
-            if (derivCount >= DERIV_BUF) {
-                TPoint& a = derivBuf[derivCount % DERIV_BUF];         // oldest (next slot)
-                TPoint& b = derivBuf[(derivCount - 1) % DERIV_BUF];  // newest
-                float dV = b.volume - a.volume;
-                if (dV > 0.00001f) {
-                    float rawDUdV = fabsf((b.voltage - a.voltage) / dV);
+            if (derivCount >= DERIV_POINTS) {
+                float sumV = 0.0f;
+                float sumU = 0.0f;
+                float sumVU = 0.0f;
+                float sumV2 = 0.0f;
+
+                for (int i = 0; i < DERIV_POINTS; i++) {
+                    int idx = (derivCount - DERIV_POINTS + i) % DERIV_BUF;
+                    TPoint& p = derivBuf[idx];
+                    sumV += p.volume;
+                    sumU += p.voltage;
+                    sumVU += p.volume * p.voltage;
+                    sumV2 += p.volume * p.volume;
+                }
+
+                float n = (float)DERIV_POINTS;
+                float denom = n * sumV2 - sumV * sumV;
+                if (denom > 0.0000000001f) {
+                    float rawDUdV = fabsf((n * sumVU - sumV * sumU) / denom);
                     if (dUdVEma < 0.0f) dUdVEma = rawDUdV;
                     else dUdVEma = DUDV_EMA_ALPHA * rawDUdV + (1.0f - DUDV_EMA_ALPHA) * dUdVEma;
                     titLastAbsDUDV = dUdVEma;
@@ -694,10 +812,8 @@ void streamingTask(void* pvParameters) {
 void setup() {
     Serial.begin(115200);
 
-    pinMode(STEP_PIN, OUTPUT);
-    pinMode(DIR_PIN,  OUTPUT);
-    pinMode(EN_PIN,   OUTPUT);
-    disableMotor();
+    loadDeviceConfig();
+    configurePins();
 
     // ADC setup
     analogReadResolution(12);
@@ -724,7 +840,7 @@ void setup() {
     xTaskCreatePinnedToCore(streamingTask, "streamTask", 4096, NULL, 1, NULL, 0);
 #endif
 
-    NimBLEDevice::init("Titrinator-00000");
+    NimBLEDevice::init(deviceName.c_str());
     NimBLEDevice::setMTU(512);
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
@@ -750,15 +866,15 @@ void setup() {
     pAdvertising->addServiceUUID(SERVICE_UUID);
     pAdvertising->setMinInterval(0x20);
     pAdvertising->setMaxInterval(0x40);
-    pAdvertising->setName("Titrinator-00000");
+    pAdvertising->setName(deviceName.c_str());
 
     NimBLEAdvertisementData scanResponse;
-    scanResponse.setName("Titrinator-00000");
+    scanResponse.setName(deviceName.c_str());
     pAdvertising->setScanResponseData(scanResponse);
 
     pAdvertising->start();
 
-    Serial.println("Titrinator-00000 ready");
+    Serial.println(deviceName + " ready");
 }
 
 // ── Loop ──────────────────────────────────────────────────────────

@@ -59,6 +59,7 @@ h1 {
 #calibrate-screen,
 #pump-cal-screen,
 #ph-cal-screen,
+#flasher-screen,
 #landing-screen,
 #titrate-screen,
 #history-screen {
@@ -144,11 +145,16 @@ h1 {
 .cancel-btn:hover { color: var(--danger); }
 
 .back-btn {
-    background: transparent; border: none; color: var(--muted);
+    background: transparent; border: none; color: var(--accent);
     cursor: pointer; font-family: 'Share Tech Mono', monospace;
-    font-size: 0.72rem; letter-spacing: 0.1em; transition: color 0.15s;
+    font-size: 0.9rem; letter-spacing: 0.1em; transition: color 0.15s;
 }
-.back-btn:hover { color: var(--accent); }
+.back-btn:hover { color: var(--primary); }
+.back-btn:disabled {
+    color: var(--border);
+    cursor: not-allowed;
+}
+.back-btn:disabled:hover { color: var(--border); }
 
 /* ── Button pair: side-by-side, equal size, wraps to column if narrow ── */
 .btn-pair {
@@ -320,6 +326,23 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button { -webkit-appearance: none; }
 input:focus { border-color: var(--accent); }
 
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.toggle-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}
+
 /* ── Dir / speed rows ── */
 .dir-row, .speed-row {
     display: flex;
@@ -360,6 +383,25 @@ input:focus { border-color: var(--accent); }
 .cal-section { display: flex; flex-direction: column; gap: 10px; }
 .cal-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 .cal-hint { font-size: 0.72rem; color: var(--muted); line-height: 1.6; }
+
+.flasher-advanced-panel {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+}
+
+.flasher-log {
+    min-height: 120px;
+    max-height: 220px;
+    overflow: auto;
+    text-align: left;
+    white-space: pre-wrap;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    background: var(--bg);
+}
 
 /* ── pH calibration points ── */
 #ph-cal-points-container {

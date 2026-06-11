@@ -5,6 +5,7 @@ import { initPumpCalibration } from './pump-calibration.js';
 import { initPhCalibration }   from './ph-calibration.js';
 import { initMeasurement, resetMeasurement, resumeWithData } from './measurement.js';
 import { initHistory } from './history.js';
+import { initFlasher } from './flasher.js';
 
 // ── State ──────────────────────────────────────────────────────
 let stepsPerMl  = 36000;    // 36000 is the default value, but will be overwritten on connect if calibration exists
@@ -13,6 +14,7 @@ let phCalCoeffs = null;     // { degree, a, b, c } in mV-space
 let direction   = 1;
 let manualFlush  = false;
 let reconnectMeta = null;   // set when STATUS_TITRATING received on connect
+let appConnected = false;
 
 // ── Init calibration modules ───────────────────────────────────
 const { onPumpNotify } = initPumpCalibration((val) => {
@@ -35,6 +37,10 @@ const { onMeasureNotify } = initMeasurement({
 
 const { onShow: onHistoryShow, onHistoryNotify, primeReconnect } = initHistory({
     onEnter: (visible) => { if (!visible) showOnly('landing-screen'); },
+});
+
+initFlasher({
+    onCancel: () => showOnly(appConnected ? 'landing-screen' : 'scan-screen'),
 });
 
 // ── BLE init ───────────────────────────────────────────────────
@@ -76,6 +82,7 @@ document.getElementById('scan-btn').addEventListener('click', async () => {
     try {
         setScanning(true);
         const name = await connect(onNotify, onDisconnected);
+        appConnected = true;
         document.getElementById('connected-name').textContent = name;
         await sendCommand('GET_PUMP_CAL');
         // GET_PH_CAL is sent when PUMP_CAL arrives, GET_STATUS when PH_CAL_* arrives,
@@ -89,6 +96,7 @@ document.getElementById('scan-btn').addEventListener('click', async () => {
                 : `Error: ${err.message}`;
     }
 });
+document.getElementById('scan-program-btn').addEventListener('click', () => showOnly('flasher-screen'));
 
 // ── BLE notifications ──────────────────────────────────────────
 function onNotify(msg) {
@@ -217,6 +225,7 @@ function onNotify(msg) {
 }
 
 function onDisconnected() {
+    appConnected = false;
     showOnly('scan-screen');
     setScanning(false);
     document.getElementById('scan-label').textContent =
@@ -242,6 +251,10 @@ document.getElementById('btn-history').addEventListener('click', async () => {
     try { await sendCommand('STREAM_STOP'); } catch(e) {}
     showOnly('history-screen');
     onHistoryShow();
+});
+document.getElementById('btn-program').addEventListener('click', async () => {
+    try { await sendCommand('STREAM_STOP'); } catch(e) {}
+    showOnly('flasher-screen');
 });
 document.getElementById('disconnect-btn').addEventListener('click', () => {
     disconnect();

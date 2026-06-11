@@ -1,7 +1,7 @@
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import { sendCommand } from './ble.js';
-import { setLog } from './ui.js';
+import { showOnly, setLog } from './ui.js';
 import { TITRATION_TYPES } from './titration-types.js';
 import { findEquivalencePoints as computeEPs, populateEpTable } from './titration-analysis.js';
 
@@ -150,6 +150,11 @@ function updateEqTable() {
     });
 }
 
+function updateBackButton() {
+    const backBtnDisplay = document.getElementById('titrate-back-btn-display');
+    if (backBtnDisplay) backBtnDisplay.disabled = state === 'RUNNING';
+}
+
 // action btn: START / PAUSE / CONTINUE / NEW TITRATION
 // cancel btn: CANCEL (paused) / DONE (done)
 function updateControls() {
@@ -185,6 +190,8 @@ function updateControls() {
             cancelBtn.style.display = 'block';
             break;
     }
+
+    updateBackButton();
 }
 
 function showSetup(visible) {
@@ -240,7 +247,6 @@ export async function resetMeasurement() {
 export function initMeasurement({ getStepsPerMl, getPhCal, onCancel }) {
     const actionBtn   = document.getElementById('titrate-action-btn');
     const cancelBtn   = document.getElementById('titrate-cancel-btn');
-    const backBtn     = document.getElementById('titrate-back-btn');
     const typeRow     = document.getElementById('titration-type-row');
     const volumeInput = document.getElementById('titrate-volume-input');
 
@@ -261,8 +267,17 @@ export function initMeasurement({ getStepsPerMl, getPhCal, onCancel }) {
         typeRow.appendChild(btn);
     });
 
-    // ── Back button (setup only) ──────────────────────────────────
-    backBtn.addEventListener('click', () => onCancel());
+    // ── Back buttons (both setup and display) ──────────────────────
+    const backBtnSetup = document.getElementById('titrate-back-btn-setup');
+    if (backBtnSetup) backBtnSetup.addEventListener('click', () => onCancel());
+
+    const backBtnDisplay = document.getElementById('titrate-back-btn-display');
+    if (backBtnDisplay) {
+        updateBackButton();
+        backBtnDisplay.addEventListener('click', () => {
+            if (state !== 'RUNNING') showSetup(true);
+        });
+    }
 
     // ── Helper: send TSTART ────────────────────────────────────────
     function sendTStart() {

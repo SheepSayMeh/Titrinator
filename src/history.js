@@ -289,6 +289,17 @@ export function initHistory({ onEnter }) {
         .addEventListener('click', () => startExport(1));
     document.getElementById('hist-delete-sel-btn')
         .addEventListener('click', startDelete);
+    document.getElementById('hist-reset-storage-btn')
+        .addEventListener('click', async () => {
+            if (!confirm('This will erase all stored titrations and cannot be undone. Continue?')) return;
+            try {
+                await sendCommand('SPIFFS_FORMAT');
+                metaList = [];
+                selectedIds.clear();
+                buildList();
+                showList();
+            } catch(e) {}
+        });
 
     return {
         onShow() {
