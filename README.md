@@ -56,7 +56,7 @@ Advantages of a peristaltic pump:
 ### Architecture
 
 ```text
-┌─────────────────────────────┐      BLE      ┌──────────────────────────┐
+┌─────────────────────────────┐      BLE     ┌──────────────────────────┐
 │ Browser Interface           │ ◄──────────► │ ESP32 Firmware           │
 │ Vite + JavaScript           │              │ Pump Control             │
 │ uPlot                       │              │ pH Measurement           │
