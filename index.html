@@ -6,8 +6,9 @@
     <title>Titrinator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Titrinator/assets/index-CPloZLb9.js"></script>
-  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-X9Mm36yE.css">
+  <script type="module" crossorigin src="/Titrinator/assets/index-umxfzzZs.js"></script>
+  <link rel="modulepreload" crossorigin href="/Titrinator/assets/rom-c_I6sS2e.js">
+  <link rel="stylesheet" crossorigin href="/Titrinator/assets/index-BuHzBm0r.css">
 </head>
 <body>
     <div class="header">
@@ -34,6 +35,7 @@
                 <div class="scan-label" id="scan-label">Press scan to find devices</div>
             </div>
             <button class="scan-btn" id="scan-btn">SCAN FOR DEVICES</button>
+            <button class="flush-btn" id="scan-program-btn">PROGRAM BOARD</button>
         </div>
 
         <!-- ── Reconnect screen ── -->
@@ -85,14 +87,75 @@
                     <span class="menu-btn-title">HISTORY</span>
                     <span class="menu-btn-sub">Browse stored titrations</span>
                 </button>
+                <button class="menu-btn" id="btn-program">
+                    <span class="menu-btn-title">PROGRAM BOARD</span>
+                    <span class="menu-btn-sub">Flash firmware and set pins</span>
+                </button>
             </div>
             <button class="disconnect-btn" id="disconnect-btn">disconnect</button>
+        </div>
+
+        <!-- ── Firmware programmer screen ── -->
+        <div id="flasher-screen">
+            <div class="screen-header">
+                <button class="back-btn" id="flasher-back-btn">← Back</button>
+            </div>
+            <div class="screen-header">
+                <div class="screen-title">Program Board</div>
+            </div>
+            <div class="cal-section">
+                <div class="step-label">Board name</div>
+                <input type="text" id="flasher-board-name" maxlength="31" value="Titrinator-00000" placeholder="Titrinator-xxxxx" />
+                <p class="cal-hint">Use Titrinator-xxxxx, where xxxxx is a unique ID for this device.</p>
+            </div>
+            <div class="cal-divider"></div>
+            <div class="cal-section">
+                <div class="step-label">Board preset</div>
+                <div class="dir-row" id="flasher-board-row"></div>
+            </div>
+            <div class="cal-section">
+                <label class="toggle-row">
+                    <input type="checkbox" id="flasher-advanced-toggle" />
+                    <span>Advanced pin editing</span>
+                </label>
+            </div>
+            <div class="cal-section flasher-advanced-panel" id="flasher-advanced-panel" style="display:none;">
+                <div class="input-row">
+                    <div class="input-col">
+                        <div class="step-label">STEP</div>
+                        <input type="number" id="flasher-pin-step" min="0" step="1" />
+                    </div>
+                    <div class="input-col">
+                        <div class="step-label">DIR</div>
+                        <input type="number" id="flasher-pin-dir" min="0" step="1" />
+                    </div>
+                    <div class="input-col">
+                        <div class="step-label">EN</div>
+                        <input type="number" id="flasher-pin-en" min="0" step="1" />
+                    </div>
+                    <div class="input-col">
+                        <div class="step-label">SENSOR</div>
+                        <input type="number" id="flasher-pin-sensor" min="0" step="1" />
+                    </div>
+                </div>
+            </div>
+            <div class="mem-bar-row">
+                <div class="mem-bar-track">
+                    <div class="mem-bar-fill" id="flasher-progress-fill"></div>
+                </div>
+                <div class="cal-hint" id="flasher-progress-text">0%</div>
+            </div>
+            <button class="primary-btn" id="flasher-program-btn">PROGRAM ESP32</button>
+            <div id="flasher-status" class="log"></div>
+            <pre id="flasher-log" class="log flasher-log"></pre>
         </div>
 
         <!-- ── Manual control screen ── -->
         <div id="manual-screen">
             <div class="screen-header">
                 <button class="back-btn" id="manual-back-btn">← Back</button>
+            </div>       
+            <div class="screen-header">
                 <div class="screen-title">Manual Control</div>
             </div>
             <div class="step-group">
@@ -125,6 +188,8 @@
         <div id="calibrate-screen">
             <div class="screen-header">
                 <button class="back-btn" id="cal-back-btn">← Back</button>
+            </div>       
+            <div class="screen-header">
                 <div class="screen-title">Calibrate</div>
             </div>
             <div class="menu-btns">
@@ -147,6 +212,8 @@
         <div id="pump-cal-screen">
             <div class="screen-header">
                 <button class="back-btn" id="pump-cal-back-btn">← Back</button>
+            </div>       
+            <div class="screen-header">
                 <div class="screen-title">Pump Calibration</div>
             </div>
             <div class="cal-section">
@@ -183,6 +250,8 @@
         <div id="ph-cal-screen">
             <div class="screen-header">
                 <button class="back-btn" id="ph-cal-back-btn">← Back</button>
+            </div>            
+            <div class="screen-header">
                 <div class="screen-title">pH Calibration</div>
             </div>
             <div class="cal-section">
@@ -219,6 +288,8 @@
             <div id="titrate-setup" style="display:flex; flex-direction:column; gap:16px;">
                 <div class="screen-header">
                     <button class="back-btn" id="titrate-back-btn-setup">← Back</button>
+                </div>       
+                <div class="screen-header">
                     <div class="screen-title">Titration</div>
                 </div>
                 <div class="cal-section">
@@ -236,6 +307,8 @@
             <div id="titrate-display" style="display:none; flex-direction:column; gap:12px;">
                 <div class="screen-header">
                     <button class="back-btn" id="titrate-back-btn-display">← Back</button>
+                </div>
+                <div class="screen-header">
                     <div class="screen-title">Titration</div>
                 </div>
                 <div class="titrate-readouts">
@@ -262,7 +335,7 @@
             </div>
 
             <div class="titrate-controls">
-                <button class="primary-btn" id="titrate-action-btn">CONTINUE</button>
+                <button class="primary-btn" id="titrate-action-btn">START</button>
                 <button class="flush-btn" id="titrate-cancel-btn" style="display:none;">CANCEL</button>
                 <button class="primary-btn" id="titrate-finish-btn" style="display:none;">FINISH</button>
             </div>
